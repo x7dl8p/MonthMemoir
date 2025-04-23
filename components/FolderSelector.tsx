@@ -1,14 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { useImageStore } from '@/lib/store';
-import { ImageFile } from '@/types/image';
-import { motion } from 'framer-motion';
-import { FolderOpen, Image } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { useImageStore } from "@/lib/store";
+import { ImageFile } from "@/types/image";
+import { motion } from "framer-motion";
+import { FolderOpen, Image } from "lucide-react";
 
 interface FolderSelectorProps {
   onImagesLoaded: () => void;
@@ -24,44 +31,41 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
 
   const handleSelectFolder = async () => {
     try {
-      // Check if running in an iframe
       if (window !== window.top) {
         toast({
           title: "Browser Restriction",
-          description: "File picker can't be used in iframes. Please use this feature on the main application window.",
+          description:
+            "File picker can't be used in iframes. Please use this feature on the main application window.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if File System Access API is supported
-      if (!('showDirectoryPicker' in window)) {
+      if (!("showDirectoryPicker" in window)) {
         toast({
           title: "Browser Not Supported",
-          description: "Your browser doesn't support the File System Access API. Please try a modern browser like Chrome or Edge.",
+          description:
+            "Your browser doesn't support the File System Access API. Please try a modern browser like Chrome or Edge.",
           variant: "destructive",
         });
         return;
       }
 
-      // Select directory
       const dirHandle = await window.showDirectoryPicker({
-        mode: 'read',
+        mode: "read",
       });
 
       setLoading(true);
       loadPreferences();
 
-      // Process files in directory
       const imageFiles: ImageFile[] = [];
       let totalFiles = 0;
       let processedFiles = 0;
 
-      // Count files first to track progress
       for await (const entry of dirHandle.values()) {
-        if (entry.kind === 'file') {
+        if (entry.kind === "file") {
           const file = await entry.getFile();
-          if (file.type.startsWith('image/')) {
+          if (file.type.startsWith("image/")) {
             totalFiles++;
           }
         }
@@ -69,19 +73,15 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
 
       setTotal(totalFiles);
 
-      // Process each file
       for await (const entry of dirHandle.values()) {
-        if (entry.kind === 'file') {
+        if (entry.kind === "file") {
           const file = await entry.getFile();
 
-          if (file.type.startsWith('image/')) {
-            // Create URL for the image
+          if (file.type.startsWith("image/")) {
             const url = URL.createObjectURL(file);
-            
-            // Get date information (using modified date as fallback)
+
             const date = await extractImageDate(file);
-            
-            // Create image object
+
             const imageFile: ImageFile = {
               id: Math.random().toString(36).substring(2, 11),
               name: file.name,
@@ -93,7 +93,7 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
             };
 
             imageFiles.push(imageFile);
-            
+
             processedFiles++;
             setProcessed(processedFiles);
             setProgress(Math.round((processedFiles / totalFiles) * 100));
@@ -116,11 +116,12 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
         });
       }
     } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.error('Error selecting folder:', error);
+      if (error.name !== "AbortError") {
+        console.error("Error selecting folder:", error);
         toast({
           title: "Error",
-          description: error.message || "There was an error loading your images.",
+          description:
+            error.message || "There was an error loading your images.",
           variant: "destructive",
         });
       }
@@ -131,25 +132,8 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
   };
 
   const extractImageDate = async (file: File): Promise<Date> => {
-    try {
-      // Try to extract EXIF data
-      const arrayBuffer = await file.arrayBuffer();
-      const exifReader = await import('exif-reader');
-      const exifData = exifReader.default(arrayBuffer);
-      
-      if (exifData?.exif?.DateTimeOriginal) {
-        const dateStr = exifData.exif.DateTimeOriginal;
-        const [datePart, timePart] = dateStr.split(' ');
-        const [year, month, day] = datePart.split(':').map(Number);
-        const [hour, minute, second] = timePart.split(':').map(Number);
-        return new Date(year, month - 1, day, hour, minute, second);
-      }
-    } catch (error) {
-      // EXIF extraction failed, fallback to modified date
-      console.log('EXIF extraction failed, using fallback date');
-    }
-    
-    // Fallback to modified date
+    // Temporarily disable EXIF extraction to isolate build error
+    // Fallback directly to modified date
     return new Date(file.lastModified);
   };
 
@@ -170,7 +154,7 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
             </p>
           </div>
         ) : (
-          <motion.div 
+          <motion.div
             className="flex flex-col items-center justify-center py-8"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300, damping: 15 }}
@@ -185,13 +169,13 @@ export function FolderSelector({ onImagesLoaded }: FolderSelectorProps) {
         )}
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           className="w-full"
           onClick={handleSelectFolder}
           disabled={loading}
         >
           <FolderOpen className="mr-2 h-4 w-4" />
-          {loading ? 'Loading...' : 'Select Folder'}
+          {loading ? "Loading..." : "Select Folder"}
         </Button>
       </CardFooter>
     </Card>
